@@ -19,45 +19,60 @@ namespace Defolderizer
 
         private void m_buttonSource_Click(object sender, EventArgs e)
         {
+            m_labelOutput.Text = "<>";
             FolderBrowserDialog fbd = new FolderBrowserDialog();
             if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                textBox1.Text = fbd.SelectedPath;            
+                m_textBoxSource.Text = fbd.SelectedPath;            
         }
 
         private void m_buttonTarget_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog fbd = new FolderBrowserDialog();
             if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                textBox2.Text = fbd.SelectedPath;
+                m_textBoxTarget.Text = fbd.SelectedPath;
         }
 
         private void m_buttonStart_Click(object sender, EventArgs e)
         {
-            if (String.IsNullOrWhiteSpace(textBox1.Text))
+            int i = 0;
+            try
             {
-                m_buttonSource_Click(this, new EventArgs());
-                return;
-            }
-            if (String.IsNullOrWhiteSpace(textBox2.Text))
+                if (String.IsNullOrWhiteSpace(m_textBoxSource.Text))
+                {
+                    m_labelOutput.Text = "Select a Source";
+                    m_buttonSource_Click(this, new EventArgs());
+                    return;
+                }
+                if (String.IsNullOrWhiteSpace(m_textBoxTarget.Text))
+                {
+                    m_labelOutput.Text = "Select a Target";
+                    m_buttonTarget_Click(this, new EventArgs());
+                    return;
+                }
+
+                if (String.IsNullOrWhiteSpace(m_textBoxFilter.Text))
+                {
+                    var fileNames = Directory.GetFiles(m_textBoxSource.Text, "*.*", SearchOption.AllDirectories);
+                    FCopy(fileNames, m_textBoxTarget.Text);
+                    i = fileNames.Length;
+                }
+                else
+                {
+                    string[] exts = m_textBoxFilter.Text.Split(new string[] { "|" }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (string s in exts)
+                    {
+                        var fileNames = Directory.GetFiles(m_textBoxSource.Text, "*." + s.Trim().Replace(".", ""), SearchOption.AllDirectories);
+                        FCopy(fileNames, m_textBoxTarget.Text);
+                        i += fileNames.Length;
+                    }
+                }
+            } catch(Exception ex)
             {
-                m_buttonTarget_Click(this, new EventArgs());
-                return;
+                MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK);
+                m_labelOutput.Text = "An error happened whilst defolderizing";
             }
 
-            if (String.IsNullOrWhiteSpace(textBox3.Text))
-            {
-                var fileNames = Directory.GetFiles(textBox1.Text, "*.*", SearchOption.AllDirectories);
-                FCopy(fileNames, textBox2.Text);
-            }
-            else
-            {
-                string[] exts = textBox3.Text.Split(new string[]{"|"}, StringSplitOptions.RemoveEmptyEntries);
-                foreach (string s in exts)
-                {
-                    var fileNames = Directory.GetFiles(textBox1.Text, "*." + s.Trim().Replace(".",""), SearchOption.AllDirectories);
-                    FCopy(fileNames, textBox2.Text);
-                }
-            }
+            m_labelOutput.Text = "Defolderized " + i.ToString() + " files";
         }
 
         private void FCopy(String[] fnames, string targetFolder)
@@ -76,6 +91,14 @@ namespace Defolderizer
                         File.Move(s, Path.Combine(targetFolder, Path.GetFileNameWithoutExtension(newFile) + DateTime.Now.Millisecond.ToString()));
                     }
                 }
+            }
+        }
+
+        private void m_buttonCopyStoT_Click(object sender, EventArgs e)
+        {
+            if (!String.IsNullOrWhiteSpace(m_textBoxSource.Text))
+            {
+                m_textBoxTarget.Text = m_textBoxSource.Text;
             }
         }
     }
